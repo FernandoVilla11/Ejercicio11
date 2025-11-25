@@ -1,6 +1,6 @@
 # app.py - Enhanced Real-Time Sports Performance Tracking System
 import asyncio, json, logging, os
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import redis
 from fastapi import FastAPI, WebSocket, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
@@ -56,12 +56,41 @@ class AthleteData(BaseModel):
     sport: str
     performance_data: Dict
     timestamp: Optional[str] = None
+    position: Optional[str] = None
+    play_type: Optional[str] = None
+    performance_state: Optional[str] = None
+    previous_performance_state: Optional[str] = None
+    performance_peak: Optional[bool] = False
+    team_dynamics: Optional[Dict] = None
+    resource_usage: Optional[Dict] = None
+
+    class Config:
+        extra = "allow"
 
 class PredictionRequest(BaseModel):
     speed: float
     accuracy: float
     stamina: float
     simulation_count: Optional[int] = 1000
+
+FIELD_MAP = {
+    "performance_data": "performanceData",
+    "play_type": "playType",
+    "performance_state": "performanceState",
+    "previous_performance_state": "previousPerformanceState",
+    "performance_peak": "performancePeak",
+    "team_dynamics": "teamDynamics",
+    "resource_usage": "resourceUsage",
+}
+
+
+def normalize_record_schema(record: Dict[str, Any]) -> Dict[str, Any]:
+    """Ensure incoming payload matches camelCase schema expected downstream."""
+    for snake_case, camel_case in FIELD_MAP.items():
+        if snake_case in record and record[snake_case] is not None:
+            record[camel_case] = record.pop(snake_case)
+    return record
+
 
 # Global instances
 try:
@@ -152,7 +181,7 @@ async def process_athlete_data(athlete_data: AthleteData, background_tasks: Back
     """Process new athlete data through all algorithms"""
     try:
         # Convert Pydantic model to dict
-        record = athlete_data.dict()
+        record = normalize_record_schema(athlete_data.dict())
         record["timestamp"] = record.get("timestamp") or datetime.now().isoformat()
         record["_id"] = f"athlete_{len(processed_athletes)}"
         
@@ -348,7 +377,7 @@ async def process_athlete_record(record: Dict):
                 "accuracy": RunningMoments()
             }
         
-        perf_data = record.get("performanceData", {})
+        perf_data = record.get("performanceData") or record.get("performance_data") or {}
         speed = float(str(perf_data.get("speed", "0")).replace(" m/s", ""))
         accuracy = int(str(perf_data.get("accuracy", "0")).replace("%", ""))
         

@@ -676,14 +676,41 @@
 
         // Generate sample data
         async function generateSampleData() {
+            const sports = ['football', 'basketball', 'soccer', 'tennis'];
+            const positions = ['Forward', 'Midfielder', 'Defender', 'Guard', 'Center', 'Goalkeeper'];
+            const playTypes = ['offensive', 'defensive', 'transition'];
+            const states = ['peak', 'good', 'average', 'declining', 'injured'];
+            const roles = ['Leader', 'Playmaker', 'Support', 'Closer'];
+
+            const sport = sports[Math.floor(Math.random() * sports.length)];
+            const currentState = states[Math.floor(Math.random() * states.length)];
+            const previousState = states[Math.floor(Math.random() * states.length)];
+
             const sampleData = {
                 player: `Test Player ${Math.floor(Math.random() * 1000)}`,
-                sport: ['football', 'basketball', 'soccer', 'tennis'][Math.floor(Math.random() * 4)],
+                sport,
+                position: positions[Math.floor(Math.random() * positions.length)],
+                play_type: playTypes[Math.floor(Math.random() * playTypes.length)],
+                performance_state: currentState,
+                previous_performance_state: previousState,
+                performance_peak: Math.random() > 0.6,
                 performance_data: {
-                    speed: (Math.random() * 25 + 5).toFixed(2),
-                    accuracy: Math.floor(Math.random() * 50 + 50),
-                    stamina: Math.floor(Math.random() * 100),
-                    pointsScored: Math.floor(Math.random() * 50)
+                    speed: `${(Math.random() * 10 + 10).toFixed(2)} m/s`,
+                    accuracy: `${Math.floor(Math.random() * 31 + 70)}%`,
+                    stamina: `${Math.floor(Math.random() * 41 + 60)}%`,
+                    pointsScored: Math.floor(Math.random() * 35),
+                    gamesPlayed: Math.floor(Math.random() * 20) + 1
+                },
+                team_dynamics: {
+                    teamId: `TEAM-${Math.floor(Math.random() * 10) + 1}`,
+                    teamState: ['sync', 'developing', 'restructuring'][Math.floor(Math.random() * 3)],
+                    roleInTeam: roles[Math.floor(Math.random() * roles.length)],
+                    teamChemistry: Math.floor(Math.random() * 31 + 65)
+                },
+                resource_usage: {
+                    dataStorageMB: parseFloat((Math.random() * 3 + 0.5).toFixed(2)),
+                    processingTimeMS: Math.floor(Math.random() * 20) + 5,
+                    networkBandwidthKbps: Math.floor(Math.random() * 60) + 20
                 }
             };
 
@@ -699,6 +726,7 @@
                 const result = await response.json();
                 if (result.status === 'success') {
                     addEvent(`Generated sample data for ${sampleData.player}`);
+                    await loadInitialData();
                 } else {
                     addEvent('Error generating sample data');
                 }
